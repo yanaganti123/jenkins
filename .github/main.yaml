@@ -1,0 +1,40 @@
+name: Java CI with Maven
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Set up JDK 11
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'adopt'
+        java-version: '11'
+
+    - name: Build with Maven
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/usr/src/mymaven -v /root/.m2:/root/.m2 -w /usr/src/mymaven maven:3.9.0 mvn -B -DskipTests clean package
+
+    - name: Run Tests
+      run: |
+        docker run --rm -v ${{ github.workspace }}:/usr/src/mymaven -v /root/.m2:/root/.m2 -w /usr/src/mymaven maven:3.9.0 mvn test
+
+      # Additional steps for test reports if needed
+      # post:
+      #   always:
+      #     - name: Test Reports
+      #       uses: actions/upload-artifact@v2
+      #       with:
+      #         name: surefire-reports
+      #         path: target/surefire-reports
+
+    - name: Deliver
+      run: ./jenkins/scripts/deliver.sh
